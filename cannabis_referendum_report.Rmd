@@ -1,0 +1,79 @@
+---
+title: "Cannabis referendum report"
+author: "Thao Nguyen"
+date: "2024-08-06"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+
+# Load library
+library(tidyverse)
+library(dplyr)
+library(kableExtra)
+```
+
+# Summary
+This report works on the Cannabis referendum data in 2020 for a decision whether it is worth pursuing a citizen initiated referendum in the next election cycle. To investigate if the support is there, we need to address the following research questions.
+1. What proportion of people in the sample supported legalisation ?
+2. Who in the sample supported legalisation ?
+
+
+# Data imputation
+
+In this first stage, we explore the dataset by checking the first few rows and find the structure as well as the statistical summary of each variable.
+
+```{r echo = FALSE}
+# Load data into the environment
+df_referendum <- read.csv('referendum_survey_lab_version.csv', header = TRUE)
+
+# Explore the data
+head(df_referendum) # The first rows of the dataset
+str(df_referendum) # The dataset structure
+summary(df_referendum) # The statistical summary of each variable
+```
+
+We can find a considerable amount of missingness in the data. It is believed this is because some people, particularly younger people, were reluctant to give their voting preference.
+
+Table on missingness of each variable in the dataset can be found as the following.
+
+```{r}
+# Replace blank values with NA
+df_referendum <- df_referendum %>% 
+  mutate(across(everything(), ~ replace(., . == "", NA)))
+
+# Check for missingness in each variable
+missingness <- df_referendum %>% 
+  summarise(across(everything(), ~ sum(is.na(.))))
+
+# Display the summary table of missingness
+missingness %>%
+    kable(col.names = c("Age", "Gender", "Referendum"), caption = "Table of missingess of each variable", align = 'cc') %>%
+    kableExtra::kable_styling(full_width = F)
+```
+
+# Visualisation on demographics
+
+```{r}
+
+# Visualize to show the distribution of age across genders
+ggplot(df_referendum, aes(x = factor(age))) +
+  geom_bar() +
+  facet_wrap(~ gender
+             , ncol=1) +
+  labs(title = "Distribution of Age Across Genders",
+       x = "Age",
+       y = "Count") +
+  theme_minimal()
+```
+
+
+# Inline reporting of proportions
+
+# Tables of each logistic regression
+
+# Conclusion
+
+
+
