@@ -8,10 +8,13 @@ output: pdf_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE)
 
+
 # Load library
 library(tidyverse)
 library(dplyr)
 library(kableExtra)
+library(mice)
+library(broom)
 ```
 
 # Summary
@@ -71,7 +74,52 @@ ggplot(df_referendum, aes(x = factor(age))) +
 
 # Inline reporting of proportions
 
+The proportion of 'yes' voters in the referendum is `r round(sum(df_referendum$referendum == 1, na.rm = TRUE) / sum(!is.na(df_referendum$referendum)), 3)`%.
+
 # Tables of each logistic regression
+```{r}
+# Load data 
+referendum_raw <- df_referendum
+
+# Conduct a logistic regression model and assign result to ref_model
+ref_model <- glm(referendum ~ age + gender, data = referendum_raw, family = binomial)
+
+# Show tidied results using the broom package and pipe into kableExtra for a clean table
+tidy(ref_model) %>%
+  kable(col.names = c("Term", "Estimate", "Std. Error", "Z value", "P value"),
+        caption = "Logistic Regression Results for Referendum Voting") %>%
+  kable_styling(full_width = F)
+
+```
+Imputed cases using the mice package.
+```{r}
+# Run multiple imputation
+referendum_imputed <- mice(referendum_raw, m = 5, seed = 500)
+
+# Calculate the proportion of yes voters
+# Use 'long' format to handle all imputed datasets
+imputed_data <- complete(referendum_imputed, "long")
+mean_proportion <- round(mean(imputed_data$referendum == 1, na.rm = TRUE), 2)
+
+# Fit the logistic regression model on each of the imputed datasets,
+# pool them, and show summary stats
+fit <- with(referendum_imputed, glm(referendum ~ age + gender, family = binomial))
+pooled <- pool(fit)
+summary_pooled <- summary(pooled)
+
+# Create a clean table using kableExtra
+table <- tidy(pooled) %>%
+  kable("html", caption = "Logistic Regression Results on Imputed Data") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"))
+
+# Print the table
+print(table)
+
+# Output the mean proportion of yes voters
+mean_proportion
+```
+
+
 
 # Conclusion
 
