@@ -84,8 +84,21 @@ referendum_raw <- df_referendum
 # Conduct a logistic regression model and assign result to ref_model
 ref_model <- glm(referendum ~ age + gender, data = referendum_raw, family = binomial)
 
-# Show tidied results using the broom package and pipe into kableExtra for a clean table
-tidy(ref_model) %>%
+# Extract summary of the model
+model_summary <- summary(ref_model)
+
+# Extract coefficients table
+coef_table <- as.data.frame(model_summary$coefficients)
+
+# Rename columns
+colnames(coef_table) <- c("Estimate", "Std. Error", "Z value", "P value")
+
+# Add row names as a column
+coef_table$Term <- rownames(coef_table)
+coef_table <- coef_table[, c("Term", "Estimate", "Std. Error", "Z value", "P value")]
+
+# Create the table with kableExtra
+coef_table %>%
   kable(col.names = c("Term", "Estimate", "Std. Error", "Z value", "P value"),
         caption = "Logistic Regression Results for Referendum Voting") %>%
   kable_styling(full_width = F)
